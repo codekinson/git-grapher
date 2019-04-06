@@ -4,6 +4,7 @@
             <div class="row">
                 <div class="col">
                     <banner/>
+                    <git-graph-display />
                 </div>
             </div>
         </div>
@@ -13,12 +14,12 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import Banner from './components/Banner.vue';
-import GitGraph from './components/GitGraph.vue';
+import GitGraphDisplay from './components/GitGraphDisplay.vue';
 
 @Component({
   components: {
     Banner,
-    GitGraph,
+    GitGraphDisplay,
   },
 })
 export default class App extends Vue {}
