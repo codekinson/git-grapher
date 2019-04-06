@@ -7,7 +7,7 @@
         <button @click="addCommit">Add Commit</button>
 
         <ul>
-            <li v-for="branch in gitGraphData.branches">
+            <li v-for="branch in gitGraphData.branches" :key="branch.id">
                 {{branch.name}}
                 <ul v-if="hasCommits(branch.name)">
                     <li v-for="commit in commits(branch.name)">
@@ -21,6 +21,7 @@
 
 <script lang="ts">
 import {Component, Vue} from 'vue-property-decorator';
+import uuidv4 from 'uuid/v4';
 import GitGraphData from '../models/GitGraphData';
 import Branch from '../models/Branch';
 
@@ -34,6 +35,7 @@ export default class GitGraphDisplay extends Vue {
 
     public addBranch() {
         const branch = {
+            id: uuidv4(),
             name: this.branch,
             commits: [],
         };
@@ -44,12 +46,12 @@ export default class GitGraphDisplay extends Vue {
         this.gitGraphData.branches.filter((branch) => branch.name === this.branch)[0].commits.push('blah blah');
     }
 
-    public hasCommits(branchName: string): boolean {
-        return this.getCommits(branchName).length > 0;
+    public hasCommits(branchId: string): boolean {
+        return this.getCommits(branchId).length > 0;
     }
 
-    public commits(branchName: string): string[] {
-        return this.getCommits(branchName);
+    public commits(branchId: string): string[] {
+        return this.getCommits(branchId);
     }
 
     private mounted() {
@@ -66,8 +68,8 @@ export default class GitGraphDisplay extends Vue {
         });*/
     }
 
-    private getCommits(branchName: string): string[] {
-        const branch = this.gitGraphData.branches.find((x) => x.name === branchName);
+    private getCommits(branchId: string): string[] {
+        const branch = this.gitGraphData.branches.find((x) => x.id === branchId);
         if (!branch) {
             return [];
         }
