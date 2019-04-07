@@ -1,17 +1,19 @@
 <template>
     <div>
-        <canvas id="gitGraph"></canvas>
+        <div>
+            <input v-model="branch">
+            <button @click="addBranch">Add Branch</button>
+            <button @click="addCommit">Add Commit</button>
+        </div>
 
-        <input v-model="branch">
-        <button @click="addBranch">Add Branch</button>
-        <button @click="addCommit">Add Commit</button>
+        <canvas id="gitGraph"></canvas>
 
         <ul>
             <li v-for="branch in gitGraphData.branches" :key="branch.id">
                 {{branch.name}}
-                <ul v-if="hasCommits(branch.name)">
-                    <li v-for="commit in commits(branch.name)">
-                        {{commit}}
+                <ul v-if="hasCommits(branch.id)">
+                    <li v-for="commit in commits(branch.id)" :key="commit.id">
+                        {{commit.message}}
                     </li>
                 </ul>
             </li>
@@ -22,8 +24,7 @@
 <script lang="ts">
 import {Component, Vue} from 'vue-property-decorator';
 import uuidv4 from 'uuid/v4';
-import GitGraphData from '../models/GitGraphData';
-import Branch from '../models/Branch';
+import {GitGraphData, Branch, Commit} from '../models/GitGraphData';
 
 @Component({
 })
@@ -33,42 +34,47 @@ export default class GitGraphDisplay extends Vue {
         branches: [],
     };
 
+    private gitgraph: any;
+
     public addBranch() {
         const branch = {
             id: uuidv4(),
             name: this.branch,
             commits: [],
+            ggBranch: this.gitgraph.branch(this.branch),
         };
         this.gitGraphData.branches.push(branch);
     }
 
     public addCommit() {
-        this.gitGraphData.branches.filter((branch) => branch.name === this.branch)[0].commits.push('blah blah');
+        const commit = {
+            id: uuidv4(),
+            message: 'blah blah',
+        };
+        const branch = this.gitGraphData.branches.find((x) => x.name === this.branch);
+        if (!!branch) {
+            branch.commits.push(commit);
+            branch.ggBranch.commit(commit.message);
+        }
     }
 
     public hasCommits(branchId: string): boolean {
         return this.getCommits(branchId).length > 0;
     }
 
-    public commits(branchId: string): string[] {
+    public commits(branchId: string): Commit[] {
         return this.getCommits(branchId);
     }
 
     private mounted() {
-        /*const gitgraph = new GitGraph({
+        this.gitgraph = new GitGraph({
             template: 'metro',
             orientation: 'horizontal',
             mode: 'compact',
         });
-        this.gitGraphData.branches.forEach((branch: Branch) => {
-            const ggBranch = gitgraph.branch(branch.name);
-            branch.commits.forEach((commitMessage: string) => {
-                ggBranch.commit(commitMessage);
-            });
-        });*/
     }
 
-    private getCommits(branchId: string): string[] {
+    private getCommits(branchId: string): Commit[] {
         const branch = this.gitGraphData.branches.find((x) => x.id === branchId);
         if (!branch) {
             return [];
