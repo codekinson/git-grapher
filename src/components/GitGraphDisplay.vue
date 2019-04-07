@@ -1,23 +1,49 @@
 <template>
     <div>
-        <div>
-            <input v-model="branch">
-            <button @click="addBranch">Add Branch</button>
-            <button @click="addCommit">Add Commit</button>
+        <div class="row">
+            <div class="col">
+                <div class="input-group input-group-sm mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="input-branch-label">Branch</span>
+                    </div>
+                    <input v-model="branch" type="text" class="form-control" aria-label="Name of branch to create" aria-describedby="input-branch-label">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="input-branch-label">From</span>
+                    </div>
+                    <select class="form-control" v-model="fromBranch">
+                        <option value="">HEAD</option>
+                        <option v-for="branch in gitGraphData.branches" :key="branch.id" :value="branch.id">
+                            {{branch.name}}
+                        </option>
+                    </select>
+                    <div class="input-group-append">
+                        <button @click="addBranch" class="btn btn-outline-secondary" type="button">Create</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="input-group input-group-sm mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="input-branch-label">Add Commit to</span>
+                    </div>
+                    <select class="form-control" v-model="commitBranch">
+                        <option value=''>Select a branch</option>
+                        <option v-for="branch in gitGraphData.branches" :key="branch.id" :value="branch.id">
+                            {{branch.name}}
+                        </option>
+                    </select>
+                    <div class="input-group-append">
+                        <button @click="addCommit" class="btn btn-outline-secondary" type="button">Create</button>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <canvas id="gitGraph"></canvas>
-
-        <ul>
-            <li v-for="branch in gitGraphData.branches" :key="branch.id">
-                {{branch.name}}
-                <ul v-if="hasCommits(branch.id)">
-                    <li v-for="commit in commits(branch.id)" :key="commit.id">
-                        {{commit.message}}
-                    </li>
-                </ul>
-            </li>
-        </ul>
+        <div class="row">
+            <div class="col">
+                <canvas id="gitGraph"></canvas>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -29,7 +55,9 @@ import {GitGraphData, Branch, Commit} from '../models/GitGraphData';
 @Component({
 })
 export default class GitGraphDisplay extends Vue {
-    protected branch = 'master';
+    protected branch = '';
+    protected fromBranch = '';
+    protected commitBranch = '';
     protected gitGraphData: GitGraphData = {
         branches: [],
     };
@@ -74,8 +102,12 @@ export default class GitGraphDisplay extends Vue {
         });
     }
 
+    private getBranch(branchId: string): Branch | undefined {
+       return this.gitGraphData.branches.find((x) => x.id === branchId);
+    }
+
     private getCommits(branchId: string): Commit[] {
-        const branch = this.gitGraphData.branches.find((x) => x.id === branchId);
+        const branch = this.getBranch(branchId);
         if (!branch) {
             return [];
         }
