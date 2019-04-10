@@ -11,5 +11,4 @@ export interface Branch {
 
 export interface Commit {
     id: string;
-    message: string;
 }

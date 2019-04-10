@@ -11,7 +11,6 @@
                         <span class="input-group-text" id="input-branch-label">From</span>
                     </div>
                     <select class="form-control" v-model="fromBranch">
-                        <option value="">HEAD</option>
                         <option v-for="branch in gitGraphData.branches" :key="branch.id" :value="branch.id">
                             {{branch.name}}
                         </option>
@@ -65,11 +64,16 @@ export default class GitGraphDisplay extends Vue {
     private gitgraph: any;
 
     public addBranch() {
+        let ggFromBranch = this.gitgraph;
+        if (!!this.fromBranch) {
+            ggFromBranch = this.gitGraphData.branches.filter((x) => x.name === this.fromBranch)[0].ggBranch;
+        }
+
         const branch = {
             id: uuidv4(),
             name: this.branch,
             commits: [],
-            ggBranch: this.gitgraph.branch(this.branch),
+            ggBranch: ggFromBranch.branch(this.branch),
         };
         this.gitGraphData.branches.push(branch);
     }
@@ -77,12 +81,11 @@ export default class GitGraphDisplay extends Vue {
     public addCommit() {
         const commit = {
             id: uuidv4(),
-            message: 'blah blah',
         };
         const branch = this.gitGraphData.branches.find((x) => x.name === this.branch);
         if (!!branch) {
             branch.commits.push(commit);
-            branch.ggBranch.commit(commit.message);
+            branch.ggBranch.commit();
         }
     }
 
@@ -100,6 +103,10 @@ export default class GitGraphDisplay extends Vue {
             orientation: 'horizontal',
             mode: 'compact',
         });
+
+        this.branch = 'master';
+        this.addBranch();
+        this.branch = '';
     }
 
     private getBranch(branchId: string): Branch | undefined {
