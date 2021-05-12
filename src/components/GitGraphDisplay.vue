@@ -1,73 +1,120 @@
 <template>
     <div>
-        <canvas id="gitGraph"></canvas>
+        <div class="row">
+            <div class="col">
+                <div class="input-group input-group-sm mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="input-branch-label">Branch</span>
+                    </div>
+                    <input v-model="branch" type="text" class="form-control" aria-label="Name of branch to create" aria-describedby="input-branch-label">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="input-branch-label">From</span>
+                    </div>
+                    <select class="form-control" v-model="fromBranch">
+                        <option v-for="branch in gitGraphData.branches" :key="branch.id" :value="branch.id">
+                            {{branch.name}}
+                        </option>
+                    </select>
+                    <div class="input-group-append">
+                        <button @click="addBranch" class="btn btn-outline-secondary" type="button">Create</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col">
+                <div class="input-group input-group-sm mb-3">
+                    <div class="input-group-prepend">
+                        <span class="input-group-text" id="input-branch-label">Add Commit to</span>
+                    </div>
+                    <select class="form-control" v-model="commitBranch">
+                        <option value=''>Select a branch</option>
+                        <option v-for="branch in gitGraphData.branches" :key="branch.id" :value="branch.id">
+                            {{branch.name}}
+                        </option>
+                    </select>
+                    <div class="input-group-append">
+                        <button @click="addCommit" class="btn btn-outline-secondary" type="button">Create</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        <input v-model="branch">
-        <button @click="addBranch">Add Branch</button>
-        <button @click="addCommit">Add Commit</button>
-
-        <ul>
-            <li v-for="branch in gitGraphData.branches">
-                {{branch.name}}
-                <ul v-if="hasCommits(branch.name)">
-                    <li v-for="commit in commits(branch.name)">
-                        {{commit}}
-                    </li>
-                </ul>
-            </li>
-        </ul>
+        <div class="row">
+            <div class="col">
+                <canvas id="gitGraph"></canvas>
+            </div>
+        </div>
     </div>
 </template>
 
 <script lang="ts">
 import {Component, Vue} from 'vue-property-decorator';
-import GitGraphData from '../models/GitGraphData';
-import Branch from '../models/Branch';
+import uuidv4 from 'uuid/v4';
+import {GitGraphData, Branch, Commit} from '../models/GitGraphData';
 
 @Component({
 })
 export default class GitGraphDisplay extends Vue {
-    protected branch = 'master';
+    protected branch = '';
+    protected fromBranch = '';
+    protected commitBranch = '';
     protected gitGraphData: GitGraphData = {
         branches: [],
     };
 
+    private gitgraph: any;
+
     public addBranch() {
+        let ggFromBranch = this.gitgraph;
+        if (!!this.fromBranch) {
+            ggFromBranch = this.gitGraphData.branches.filter((x) => x.name === this.fromBranch)[0].ggBranch;
+        }
+
         const branch = {
+            id: uuidv4(),
             name: this.branch,
             commits: [],
+            ggBranch: ggFromBranch.branch(this.branch),
         };
         this.gitGraphData.branches.push(branch);
     }
 
     public addCommit() {
-        this.gitGraphData.branches.filter((branch) => branch.name === this.branch)[0].commits.push('blah blah');
+        const commit = {
+            id: uuidv4(),
+        };
+        const branch = this.gitGraphData.branches.find((x) => x.name === this.branch);
+        if (!!branch) {
+            branch.commits.push(commit);
+            branch.ggBranch.commit();
+        }
     }
 
-    public hasCommits(branchName: string): boolean {
-        return this.getCommits(branchName).length > 0;
+    public hasCommits(branchId: string): boolean {
+        return this.getCommits(branchId).length > 0;
     }
 
-    public commits(branchName: string): string[] {
-        return this.getCommits(branchName);
+    public commits(branchId: string): Commit[] {
+        return this.getCommits(branchId);
     }
 
     private mounted() {
-        /*const gitgraph = new GitGraph({
+        this.gitgraph = new GitGraph({
             template: 'metro',
             orientation: 'horizontal',
             mode: 'compact',
         });
-        this.gitGraphData.branches.forEach((branch: Branch) => {
-            const ggBranch = gitgraph.branch(branch.name);
-            branch.commits.forEach((commitMessage: string) => {
-                ggBranch.commit(commitMessage);
-            });
-        });*/
+
+        this.branch = 'master';
+        this.addBranch();
+        this.branch = '';
     }
 
-    private getCommits(branchName: string): string[] {
-        const branch = this.gitGraphData.branches.find((x) => x.name === branchName);
+    private getBranch(branchId: string): Branch | undefined {
+       return this.gitGraphData.branches.find((x) => x.id === branchId);
+    }
+
+    private getCommits(branchId: string): Commit[] {
+        const branch = this.getBranch(branchId);
         if (!branch) {
             return [];
         }
